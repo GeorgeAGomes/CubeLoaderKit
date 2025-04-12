@@ -94,24 +94,6 @@ private extension LUT {
 	}
 }
 
-// MARK: - CIImage Helpers
-private extension CIImage {
-	static func createFrom1D(values: [[Float]], resolution: Int) throws -> CIImage {
-		var bytePixels = [UInt8]()
-		for rgba in values {
-			bytePixels.append(contentsOf: rgba.prefix(4).map { UInt8(clamping: Int($0 * 255)) })
-		}
-		let data = bytePixels.withUnsafeBufferPointer { Data(buffer: $0) }
-		return CIImage(
-			bitmapData: data,
-			bytesPerRow: resolution * 4,
-			size: CGSize(width: resolution, height: 1),
-			format: .RGBA8,
-			colorSpace: CGColorSpaceCreateDeviceRGB()
-		)
-	}
-}
-
 // MARK: - File Parsing
 private extension LUT {
 	mutating func setup(lines: [String.SubSequence]) throws {
@@ -126,22 +108,23 @@ private extension LUT {
 
 	mutating func processLine(_ components: [String]) throws {
 		guard let key = components.first else { return }
+		let component = LUTComponent(rawValue: key)
 
-		switch key {
-		case "TITLE":
+		switch component {
+		case .title:
 			name = components.dropFirst().joined(separator: " ").replacingOccurrences(of: "\"", with: "")
-		case "LUT_3D_SIZE":
+		case .lut3DSize:
 			threeDResolution = components.last.flatMap(Int.init)
-		case "LUT_1D_SIZE":
+		case .lut1DSize:
 			oneDResolution = components.last.flatMap(Int.init)
-		case "LUT_3D_INPUT_RANGE":
+		case .lut3DInputRange:
 			let range = components.dropFirst().compactMap(Float.init)
 			guard range.count == 2 else { throw LUTError.invalidData }
 			inputRange = (range[0], range[1])
 			domain = LUTRange(min: [range[0], range[0], range[0]], max: [range[1], range[1], range[1]])
-		case "DOMAIN_MIN":
+		case .domainMin:
 			domain.min = try components.dropFirst().compactMap(Float.init).validated(count: 3)
-		case "DOMAIN_MAX":
+		case .domainMax:
 			domain.max = try components.dropFirst().compactMap(Float.init).validated(count: 3)
 		default:
 			let values = components.compactMap(Float.init)
@@ -155,13 +138,5 @@ private extension LUT {
 				throw LUTError.invalidFormat
 			}
 		}
-	}
-}
-
-// MARK: - Helpers
-private extension Array where Element == Float {
-	func validated(count: Int) throws -> [Float] {
-		guard self.count == count else { throw LUTError.invalidData }
-		return self
 	}
 }
