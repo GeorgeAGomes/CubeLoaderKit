@@ -5,6 +5,7 @@
 //  Created by George on 11/04/25.
 //
 
+#if canImport(UIKit)
 import UIKit
 import CoreImage
 
@@ -26,3 +27,4 @@ public class ImageLUTApplier {
 		return UIImage(cgImage: cgImage)
 	}
 }
+#endif
