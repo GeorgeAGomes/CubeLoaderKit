@@ -57,8 +57,7 @@ fi
 echo "current: ${LATEST}"
 echo "new:     ${NEW_TAG}  (${BUMP} bump${PRE:+ / ${PRE}})"
 
-# --- create tag -------------------------------------------------------------
+# --- create and push tag -----------------------------------------------------
 git tag "$NEW_TAG"
-echo "tag '$NEW_TAG' created."
-echo ""
-echo "to push: git push origin $NEW_TAG"
+git push origin "$NEW_TAG"
+echo "tag '$NEW_TAG' created and pushed."
