@@ -8,6 +8,7 @@ set -euo pipefail
 
 BUMP="${1:-patch}"
 PRE="${2:-}"   # e.g. "alpha", "beta", or "" for stable
+CHANGELOG_SCRIPT="scripts/extract_changelog_entry.sh"
 
 # --- validate working tree ---------------------------------------------------
 if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -54,10 +55,21 @@ else
   NEW_TAG="${BASE}"
 fi
 
+if [[ ! -x "$CHANGELOG_SCRIPT" ]]; then
+  echo "error: missing executable ${CHANGELOG_SCRIPT}." >&2
+  exit 1
+fi
+
+if ! RELEASE_NOTES="$("$CHANGELOG_SCRIPT" "$NEW_TAG")"; then
+  exit 1
+fi
+
 echo "current: ${LATEST}"
 echo "new:     ${NEW_TAG}  (${BUMP} bump${PRE:+ / ${PRE}})"
+echo "notes:   changelog entry found for ${NEW_TAG}"
 
 # --- create and push tag -----------------------------------------------------
 git tag "$NEW_TAG"
 git push origin "$NEW_TAG"
 echo "tag '$NEW_TAG' created and pushed."
+echo "GitHub Release will be created from CHANGELOG.md for '$NEW_TAG'."

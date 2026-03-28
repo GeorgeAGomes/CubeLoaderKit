@@ -5,6 +5,18 @@ All notable changes to CubeLoaderKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-03-28
+
+Adds `Codable` support for `LUT`, making it practical to cache parsed LUTs and reload them without reparsing `.cube` files.
+
+### Added
+- `LUT` now conforms to `Codable` for serialization and deserialization
+- Public empty `LUT.init()` for constructing LUTs before decoding or manual population
+
+### Changed
+- Encodes 1D and 3D LUT float buffers as raw `Data` for compact payloads and faster persistence
+- Omits transient parsing-only values such as `domain` and `inputRange` from encoded output
+
 ## [1.0.0] - 2026-03-23
 
 First stable release of CubeLoaderKit — a Swift package for loading, parsing, and applying `.cube` LUT files on iOS using Core Image.
