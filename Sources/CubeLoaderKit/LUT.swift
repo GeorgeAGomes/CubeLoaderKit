@@ -8,6 +8,9 @@ public struct LUT: CustomDebugStringConvertible {
 	public var domain: LUTRange = .init(min: [0, 0, 0], max: [1, 1, 1])
 	public var threeDResolution: Int?
 	public var oneDResolution: Int?
+
+	/// Creates an empty LUT. Populate properties before calling `createFilter()`.
+	public init() {}
 	public var inputRange: (min: Float, max: Float)?
 
 	public var threeDValues: [[Float]] = []
@@ -59,6 +62,58 @@ public struct LUT: CustomDebugStringConvertible {
 			desc += "Unknown format"
 		}
 		return desc
+	}
+}
+
+// MARK: - Codable
+// Encodes float arrays as raw binary Data for compact, fast serialization.
+// `inputRange` and `domain` are omitted — they are only used during .cube
+// file parsing, not during filter creation from cached data.
+extension LUT: Codable {
+	private enum CodingKeys: String, CodingKey {
+		case name, format, threeDResolution, oneDResolution, threeDData, oneDData
+	}
+
+	public init(from decoder: Decoder) throws {
+		let c = try decoder.container(keyedBy: CodingKeys.self)
+		name             = try c.decodeIfPresent(String.self,   forKey: .name)
+		format           = try c.decodeIfPresent(LUTFormat.self, forKey: .format) ?? .unknown
+		threeDResolution = try c.decodeIfPresent(Int.self,       forKey: .threeDResolution)
+		oneDResolution   = try c.decodeIfPresent(Int.self,       forKey: .oneDResolution)
+
+		if let data = try c.decodeIfPresent(Data.self, forKey: .threeDData) {
+			threeDValues = data.withUnsafeBytes { raw in
+				let floats = raw.bindMemory(to: Float.self)
+				return stride(from: 0, to: floats.count, by: 4).map {
+					[floats[$0], floats[$0+1], floats[$0+2], floats[$0+3]]
+				}
+			}
+		}
+		if let data = try c.decodeIfPresent(Data.self, forKey: .oneDData) {
+			oneDValues = data.withUnsafeBytes { raw in
+				let floats = raw.bindMemory(to: Float.self)
+				return stride(from: 0, to: floats.count, by: 4).map {
+					[floats[$0], floats[$0+1], floats[$0+2], floats[$0+3]]
+				}
+			}
+		}
+	}
+
+	public func encode(to encoder: Encoder) throws {
+		var c = encoder.container(keyedBy: CodingKeys.self)
+		try c.encodeIfPresent(name,             forKey: .name)
+		try c.encode(format,                    forKey: .format)
+		try c.encodeIfPresent(threeDResolution, forKey: .threeDResolution)
+		try c.encodeIfPresent(oneDResolution,   forKey: .oneDResolution)
+
+		if !threeDValues.isEmpty {
+			let flat = threeDValues.flatMap { $0 }
+			try c.encode(flat.withUnsafeBufferPointer { Data(buffer: $0) }, forKey: .threeDData)
+		}
+		if !oneDValues.isEmpty {
+			let flat = oneDValues.flatMap { $0 }
+			try c.encode(flat.withUnsafeBufferPointer { Data(buffer: $0) }, forKey: .oneDData)
+		}
 	}
 }
 
