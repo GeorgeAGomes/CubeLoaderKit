@@ -5,6 +5,17 @@ All notable changes to CubeLoaderKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-03-28
+
+Improves the release workflow so GitHub Releases are generated directly from this changelog and version bumps fail early when release notes are missing.
+
+### Added
+- Changelog section extraction script used by both local bumping and GitHub Actions releases
+
+### Changed
+- Release workflow now publishes GitHub Release descriptions from the matching `CHANGELOG.md` entry
+- Version bump script now validates that the target version already exists in the changelog before creating and pushing a tag
+
 ## [1.1.0] - 2026-03-28
 
 Adds `Codable` support for `LUT`, making it practical to cache parsed LUTs and reload them without reparsing `.cube` files.
